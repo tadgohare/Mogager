@@ -14,7 +14,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
-            .service(Files::new("/", "./build"))
             .service(Files::new("/", "./public"))
     })
     .bind("localhost:3000")?

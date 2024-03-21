@@ -1,8 +1,7 @@
 import React from "react";
-import ReactDOM from 'react-dom/client';
-import Page from "./Page" //change this line
-
+import { createRoot } from 'react-dom/client';
+import App from "./App"
+console.log("this has been served");
 const container = document.getElementById('root');
-const root = ReactDOM.createRoot(container);
-root.render(<Page />);
-//ReactDOM.render(<Page />, document.getElementById('root'));
+const root = createRoot(container); // createRoot(container!) if you use TypeScript
+root.render(<App />);
