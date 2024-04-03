@@ -1,0 +1,2 @@
+ALTER TABLE health
+ADD COLUMN age INT NOT NULL;
