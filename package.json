@@ -4,6 +4,7 @@
   "description": "Fitness management application for COMP 3005",
   "main": "src/index.js",
   "scripts": {
+    "init": "python3 config/init_env.py && PGPASSWORD=$DB_PASS psql -U $DB_USER -h $DB_HOST -p $DB_PORT -f database/init.sql",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src",
     "dev": "nodemon src/server.js --exec 'npm run lint && node'",
