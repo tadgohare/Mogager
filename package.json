@@ -5,6 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src",
+    "dev": "nodemon src/server.js --exec 'npm run lint && node'",
     "build": "npx webpack",
     "start": "node src/server.js"
   },

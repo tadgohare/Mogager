@@ -1,5 +1,7 @@
---CREATE DATABASE mogager;
-
+-- ONLY USE THIS IF YOU ARE INITIALIZING OR HAVE MADE CHANGES TO THE DATABASE AS ALL THE DATA WILL BE DELETED!!!!!!!!!!!!
+-- READ THE WARNING
+DROP DATABASE IF EXISTS mogager;
+CREATE DATABASE mogager;
 
 CREATE TABLE trainers (
     trainerid SERIAL PRIMARY KEY,
@@ -15,7 +17,6 @@ CREATE TABLE health (
     height INT,
     gender TEXT NOT NULL,
     age INT NOT NULL,
-    -- FOREIGN KEY (userid) REFERENCES users(userid),
 );
 
 CREATE TABLE exercises (
@@ -60,9 +61,6 @@ CREATE TABLE admins (
     password TEXT NOT NULL
 );
 
-ALTER TABLE health
-ADD CONSTRAINT fk_health_users
-FOREIGN KEY (userid) REFERENCES users(userid);
 
 -- CREATE VIEW dashboard AS SELECT
 --     users.username,
