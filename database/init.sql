@@ -1,6 +1,7 @@
 -- ONLY USE THIS IF YOU ARE INITIALIZING OR HAVE MADE CHANGES TO THE DATABASE AS ALL THE DATA WILL BE DELETED!!!!!!!!!!!!
 -- READ THE WARNING
 DROP DATABASE IF EXISTS mogager;
+
 CREATE DATABASE mogager;
 
 CREATE TABLE trainers (
@@ -12,11 +13,10 @@ CREATE TABLE trainers (
 
 CREATE TABLE health (
     healthid SERIAL PRIMARY KEY,
-    userid INT,
     weight INT,
     height INT,
     gender TEXT NOT NULL,
-    age INT NOT NULL,
+    age INT NOT NULL
 );
 
 CREATE TABLE exercises (
@@ -81,6 +81,7 @@ SELECT
     users.name,
     users.payment_info,
     trainers.name AS trainer_name,
+    health.healthid,
     health.weight,
     health.height,
     health.gender,
@@ -108,3 +109,11 @@ LEFT JOIN trainers ON sessions.trainerid = trainers.trainerid
 LEFT JOIN rooms ON sessions.roomid = rooms.roomid;
 
 
+CREATE VIEW equipment_view AS
+SELECT
+    equipment.asset_tag,
+    equipment.name,
+    equipment.needs_repair,
+    rooms.name AS room_name
+FROM equipment
+LEFT JOIN rooms ON equipment.roomid = rooms.roomid;

@@ -1,13 +1,17 @@
-import React, { useState, useEffect, memo } from "react";
-//const db = require('./Database.js');
+import React, { useState, useEffect, memo, useRef } from "react";
 
 const App = () =>{
     const [isLoggedIn, setIsLoggedIn] = useState(sessionStorage.getItem('token') !== null);
+    const [role, setRole] = useState(sessionStorage.getItem('role'));
 
     const handleLogout = () => {
         sessionStorage.removeItem('userID');
+        sessionStorage.removeItem('adminID');
+        sessionStorage.removeItem('trainerID');
+        sessionStorage.removeItem('role');
         sessionStorage.removeItem('token');
         setIsLoggedIn(false);
+        setRole(null);
     };
     return (
         <div>
@@ -15,9 +19,97 @@ const App = () =>{
             {/* <img src="/mogtrump.webp" alt="mogged" size="50%"></img> */}
             {!isLoggedIn && <UserRegistration setIsLoggedIn={setIsLoggedIn} />}
             <br></br>
-            <UserLogin isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+            <UserLogin isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setRole={setRole}/>
+            <br></br>
+            <TrainerLogin isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setRole={setRole}/>
+            <br></br>
+            <AdminLogin isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setRole={setRole}/>
             {isLoggedIn && <LogoutButton handleLogout={handleLogout} />}
-            {isLoggedIn && <Dashboard />}
+            {isLoggedIn && role === 'user' && <UserDashboard />}
+            {isLoggedIn && role === 'trainer' && <TrainerDashBoard />}
+            {isLoggedIn && role === 'admin' && <AdminDashboard />}
+        </div>
+    )
+}
+
+const TrainerLogin = ({isLoggedIn, setIsLoggedIn}) =>{
+    const handleLogin = (e) => {
+        e.preventDefault();
+        const userData = {
+            username: e.target[0].value.toLowerCase(),
+            password:e.target[1].value
+        };
+        fetch('/trainer/login',{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        }).then(response => {
+            if (!response.ok) {
+                alert(response.statusText);
+                throw new Error(response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            sessionStorage.setItem('trainerID', data.trainerid);
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'trainer');
+            setIsLoggedIn(true);
+            console.log('Trainer login successful for ID: ',data.trainerid);
+            console.log('Token: ',data.token);
+        });
+    }
+    if (isLoggedIn) return null;
+    return (
+        <div className="container">
+            <h2>Trainer Login to Mogager</h2>
+            <form onSubmit={handleLogin}>
+                <input type="text" placeholder="Username"></input>
+                <input type="password" placeholder="Password"></input>
+                <button>Login as Trainer</button>
+            </form>
+        </div>
+    )
+}
+
+const AdminLogin = ({isLoggedIn, setIsLoggedIn}) =>{
+    const handleLogin = (e) => {
+        e.preventDefault();
+        const userData = {
+            username: e.target[0].value.toLowerCase(),
+            password:e.target[1].value
+        };
+        fetch('/admin/login',{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        }).then(response => {
+            if (!response.ok) {
+                alert(response.statusText);
+                throw new Error(response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            sessionStorage.setItem('adminID', data.adminid);
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'admin');
+            setIsLoggedIn(true);
+            console.log('Admin login successful for ID: ',data.adminid);
+            console.log('Token: ',data.token);
+        });
+    }
+    if (isLoggedIn) return null;
+    return (
+        <div className="container">
+            <h2>Admin Login to Mogager</h2>
+            <form onSubmit={handleLogin}>
+                <input type="text" placeholder="Username"></input>
+                <input type="password" placeholder="Password"></input>
+                <button>Login as Admin</button>
+            </form>
         </div>
     )
 }
@@ -26,7 +118,7 @@ const UserLogin = ({isLoggedIn, setIsLoggedIn}) =>{
     const handleLogin = (e) => {
         e.preventDefault();
         const userData = {
-            username: e.target[0].value,
+            username: e.target[0].value.toLowerCase(),
             password:e.target[1].value
         };
         fetch('/user/login',{
@@ -46,6 +138,7 @@ const UserLogin = ({isLoggedIn, setIsLoggedIn}) =>{
         .then(data => {
             sessionStorage.setItem('userID', data.userid);
             sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'user');
             setIsLoggedIn(true);
             console.log('User login successful for ID: ',data.userid);
             console.log('Token: ',data.token);
@@ -61,7 +154,7 @@ const UserLogin = ({isLoggedIn, setIsLoggedIn}) =>{
             <form onSubmit={handleLogin}>
                 <input type="text" placeholder="Username"></input>
                 <input type="password" placeholder="Password"></input>
-                <button>Login</button>
+                <button>Login as User</button>
             </form>
         </div>
     )
@@ -81,7 +174,7 @@ const UserRegistration = ({setIsLoggedIn}) =>{
         }
 
         const userData = {
-            username: e.target[0].value,
+            username: e.target[0].value.toLowerCase(),
             name: e.target[1].value,
             age: e.target[2].value,
             height: e.target[3].value,
@@ -103,6 +196,7 @@ const UserRegistration = ({setIsLoggedIn}) =>{
         .then(data => {
             console.log('Success:', data);
             sessionStorage.setItem('userID', data.userid);
+
             setIsLoggedIn(true);
         })
         .catch((error) => {
@@ -139,9 +233,199 @@ const LogoutButton = ({handleLogout}) =>{
     )
 }
 
-const Dashboard = () => {
-    // const [data, setData] = useState({name: 'User'}); //initial state is an object with name key set to 'User'
+const TrainerDashBoard = () => {
+    return (
+        <div className="container">
+            <h2>Trainer Dashboard</h2>
+        </div>
+    )
+}
+
+const AdminDashboard = () => {
+    return(
+        <div className="container">
+            <h2>Admin Dashboard</h2>
+            <EquipmentList />
+            <AddRoom />
+            <AddEquipment />
+        </div>
+    );
+}
+
+const EquipmentList = () => {
+    const [equipment, setEquipment] = useState([]);
+    useEffect(() => {
+        fetch('/sql/getequipment', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            }
+        }).then(response => {
+            if (!response.ok) {
+                //
+                throw new Error(response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            console.log('Equipment Data: ',data);
+            setEquipment(data);
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
+    }, [equipment]);
+    return (
+        <div>
+            <h3>Equipment List</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Equipment ID</th>
+                        <th>Equipment Name</th>
+                        <th>Room Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {equipment.map((equip, index) => {
+                    return (
+                        <tr key={index}>
+                            <td>{equip.asset_tag}</td>
+                            <td>{equip.name}</td>
+                            <td>{equip.room_name}</td>
+                        </tr>
+                    );
+})}
+                </tbody>
+            </table>
+        </div>
+    )
+
+}
+
+const AddRoom = () => {
+    const roomNameRef = useRef();
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const roomData = {
+            name: roomNameRef.current.value,
+            is_bookable: e.target.roomType.value,
+        };
+        console.log(roomData);
+        
+        //POST REQUEST to insert a user
+        fetch('/sql/add_room', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify(roomData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+    return (
+        <div>
+            <form onSubmit={handleSubmit}>
+                <input ref={roomNameRef} type="text" placeholder="Room Name"></input>
+                <input type="radio" id="bookable" name="roomType" value={true} />
+                <label htmlFor="bookable">Bookable</label>
+                <input type="radio" id="notBookable" name="roomType" value={false} />
+                <label htmlFor="notBookable">Not Bookable</label>
+                <button type="submit" onSubmit={handleSubmit}>Add Room</button>
+            </form>
+        </div>
+    );
+}
+
+async function getAllRooms() {
+    try {
+        const response = await fetch('/sql/get_rooms', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const rooms = await response.json();
+        console.log(rooms);
+        return rooms.map(room => ({ id: room.roomid, name: room.name }));    
+    } 
+        catch (error) {
+        console.error('An error occurred while getting the rooms:', error);
+    }
+}
+
+const AddEquipment = () => {
+    const [rooms, setRooms] = useState([]);
+
+    useEffect(() => {
+        const fetchRooms = async () => {
+            const fetchedRooms = await getAllRooms();
+            setRooms(fetchedRooms);
+        };
+        fetchRooms();
+    },[]);
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const equipmentData = {
+            name: e.target[0].value,
+            roomid: e.target[1].value,
+        };
+        console.log('Equipment Data: ',equipmentData);
+        fetch('/sql/add_equipment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(equipmentData),
+        }).then(response => {
+            if (!response.ok) {
+                //
+                throw new Error(response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            console.log('Equipment Data: ',data);
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
+
+    }
+    return (
+        <div>
+            <form onSubmit={handleSubmit}>
+                <input type="text" placeholder="Equipment Name"></input>
+                <select>
+                    {rooms.map(room => (
+                        <option value={room.id}>{room.name}</option>
+                    ))}
+                </select>
+                <button type="submit">Add Equipment</button>
+            </form>
+        </div>
+    );
+};
+
+
+const UserDashboard = () => {
     const [data, setData] = useState(null);
+    const heightRef = useRef();
+    const weightRef = useRef();
+    const usernameRef = useRef();
+
     useEffect(() => {
         fetch('/sql/dashboard', {
             method: 'GET',
@@ -163,6 +447,33 @@ const Dashboard = () => {
             console.error('Error:', error);
         });
     }, []);
+
+    const handleUpdate = async () => {
+        if(!validateEmail(usernameRef.current.value)){
+            alert("Please enter a valid email address");
+            return;
+        }
+        data.height = heightRef.current.value;
+        data.weight = weightRef.current.value;
+        data.username = usernameRef.current.value;
+        // setData(data);
+        fetch('/sql/update_user', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            // setData(data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    };
     return (
         <div>
             {data ? (
@@ -172,19 +483,15 @@ const Dashboard = () => {
                     <tbody>
                         <tr>
                             <td>Username</td>
-                            <td>{data.username}</td>
-                        </tr>
-                        <tr>
-                            <td>Name of personal trainer</td>
-                            <td>{data.trainer_name}</td>
+                            <td><input ref={usernameRef} type="text" defaultValue={data.username} placeholder={data.username}/></td>
                         </tr>
                         <tr>
                             <td>Height</td>
-                            <td><input type="number" defaultValue={data.height} placeholder={data.height}/></td>
+                            <td><input ref={heightRef} type="number" defaultValue={data.height} placeholder={data.height}/></td>
                         </tr>
                         <tr>
                             <td>Weight</td>
-                            <td><input type="number" defaultValue={data.weight} placeholder={data.weight}/></td>
+                            <td><input ref={weightRef} type="number" defaultValue={data.weight} placeholder={data.weight}/></td>
                         </tr>
                         <tr>
                             <td>Age</td>
@@ -194,12 +501,9 @@ const Dashboard = () => {
                             <td>Gender</td>
                             <td>{data.gender}</td>
                         </tr>
-                        <tr>
-                            <td>Sessions</td>
-                        </tr>
-                        
                     </tbody>
                 </table>
+                <button className="updateUserInfo" onClick={handleUpdate}>Update</button>
                 {/* Session Table */}
                 <UserSchedule />
             </div>
@@ -273,4 +577,4 @@ function validateEmail(email) {
     return re.test(String(email).toLowerCase());
 }
 
-export default memo(App)
+export default memo(App);
