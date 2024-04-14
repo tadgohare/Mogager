@@ -37,4 +37,4 @@ INSERT INTO rooms (name, is_bookable) VALUES ('Stretching/Misc', true);
 INSERT INTO admins (username, password) VALUES ('admin', 'admin');
 
 -- Insert into sessions
-INSERT INTO sessions (userid, trainerid, roomid, start_time) VALUES (1, 1, 1, '2025-01-01 10:00:00');
+-- INSERT INTO sessions (userid, trainerid, roomid, start_time) VALUES (1, 1, 1, '2025-01-01 10:00:00');

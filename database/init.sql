@@ -1,7 +1,3 @@
--- ONLY USE THIS IF YOU ARE INITIALIZING OR HAVE MADE CHANGES TO THE DATABASE AS ALL THE DATA WILL BE DELETED!!!!!!!!!!!!
--- READ THE WARNING
--- DROP DATABASE IF EXISTS mogager;
-
 CREATE DATABASE mogager;
 
 CREATE TABLE trainers (
@@ -79,7 +75,6 @@ SELECT
     users.username,
     users.name,
     users.payment_info,
-    trainers.name AS trainer_name,
     health.healthid,
     health.weight,
     health.height,
@@ -90,13 +85,11 @@ SELECT
     exercises.plan AS exercise_plan
 FROM users
 LEFT JOIN health ON users.healthid = health.healthid
-LEFT JOIN exercises ON users.exerciseid = exercises.exerciseid
-LEFT JOIN trainers ON users.trainerid = trainers.trainerid;
+LEFT JOIN exercises ON users.exerciseid = exercises.exerciseid;
 
 CREATE VIEW schedule AS
 SELECT
     sessions.start_time,
-    sessions.end_time,
     sessions.userid,
     sessions.trainerid,
     users.name AS client_name,
