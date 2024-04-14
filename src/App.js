@@ -32,6 +32,8 @@ const App = () =>{
     )
 }
 
+
+
 const TrainerLogin = ({isLoggedIn, setIsLoggedIn}) =>{
     const handleLogin = (e) => {
         e.preventDefault();
@@ -65,13 +67,54 @@ const TrainerLogin = ({isLoggedIn, setIsLoggedIn}) =>{
         <div className="container">
             <h2>Trainer Login to Mogager</h2>
             <form onSubmit={handleLogin}>
-                <input type="text" placeholder="Username"></input>
+                <input type="text" placeholder="Email"></input>
                 <input type="password" placeholder="Password"></input>
                 <button>Login as Trainer</button>
             </form>
         </div>
     )
 }
+
+const AddTrainer = () => {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const trainerData = {
+            name: e.target[0].value,
+            username: e.target[1].value.toLowerCase(),
+            password:e.target[2].value
+        };
+        console.log(trainerData);
+        
+        //POST REQUEST to insert a user
+        fetch('/sql/insert_trainer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(trainerData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            alert("Trainer added successfully!");
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+    return(
+        <div>
+            <h2>Add Trainer</h2>
+            <form onSubmit={handleSubmit}>
+                <input type="text" placeholder="Name"></input>
+                <input type="text" placeholder="Username/Email"></input>
+                <input type="password" placeholder="Password"></input>
+                <button>Add Trainer</button>
+            </form>
+        </div>
+    );
+};
 
 const AdminLogin = ({isLoggedIn, setIsLoggedIn}) =>{
     const handleLogin = (e) => {
@@ -152,7 +195,7 @@ const UserLogin = ({isLoggedIn, setIsLoggedIn}) =>{
         <div className="container">
             <h2>Login to Mogager</h2>
             <form onSubmit={handleLogin}>
-                <input type="text" placeholder="Username"></input>
+                <input type="text" placeholder="Username/Email"></input>
                 <input type="password" placeholder="Password"></input>
                 <button>Login as User</button>
             </form>
@@ -160,7 +203,7 @@ const UserLogin = ({isLoggedIn, setIsLoggedIn}) =>{
     )
 }
 
-const UserRegistration = ({setIsLoggedIn}) =>{
+const UserRegistration = () =>{
     const handleSubmit = (e) => {
         e.preventDefault();
         if(e.target[5].value !== e.target[6].value){
@@ -195,9 +238,7 @@ const UserRegistration = ({setIsLoggedIn}) =>{
         .then(response => response.json())
         .then(data => {
             console.log('Success:', data);
-            sessionStorage.setItem('userID', data.userid);
-
-            setIsLoggedIn(true);
+            alert("User added successfully! Try loggin in now!");
         })
         .catch((error) => {
             console.error('Error:', error);
@@ -237,25 +278,15 @@ const TrainerDashBoard = () => {
     return (
         <div className="container">
             <h2>Trainer Dashboard</h2>
+            <TrainerSchedule />
         </div>
     )
 }
 
-const AdminDashboard = () => {
-    return(
-        <div className="container">
-            <h2>Admin Dashboard</h2>
-            <EquipmentList />
-            <AddRoom />
-            <AddEquipment />
-        </div>
-    );
-}
-
-const EquipmentList = () => {
-    const [equipment, setEquipment] = useState([]);
+const TrainerSchedule = () => {
+    const [sessions, setSessions] = useState([]);
     useEffect(() => {
-        fetch('/sql/getequipment', {
+        fetch('/sql/trainer_schedule', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -268,19 +299,163 @@ const EquipmentList = () => {
             }
             return response.json();
         }).then(data => {
-            console.log('Equipment Data: ',data);
-            setEquipment(data);
+            console.log('Session Data: ',data);
+            setSessions(data);
         }).catch((error) => {
             console.error('Error:', error);
         });
-    }, [equipment]);
+    }, []);
+    return (
+        <div>
+            <h3>Schedule</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Start Time</th>
+                        <th>User Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {sessions.map((session, index) => {
+                    const startTime = new Date(session.start_time);
+                    const formattedStartTime = startTime.toLocaleString();
+
+                    return (
+                        <tr key={index}>
+                            <td>{formattedStartTime}</td>
+                            <td>{session.client_name}</td>
+                        </tr>
+                    );
+})}
+                </tbody>
+            </table>
+        </div>
+    )
+};
+
+
+const ScheduleBooking = () => {
+    const [bookingData, setBookingData] = useState({ date: '', time: '', trainer: '' });
+
+    const handleInputChange = (event) => {
+        setBookingData({ ...bookingData, [event.target.name]: event.target.value });
+    };
+
+    //POST REQUEST to insert a user
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        // Combine date and time into a single ISO 8601 timestamp string
+        const timestamp = `${bookingData.date}T${bookingData.time}:00`;
+
+        // Replace the date and time fields with the combined timestamp
+        const dataToSend = { ...bookingData, timestamp, userid: sessionStorage.getItem('userID') };
+        console.log(dataToSend);
+
+        fetch('/sql/add_session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(dataToSend),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            alert("Session added successfully!");
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    return (
+        <div>
+            <h2>Book a Session</h2>
+            <form onSubmit={handleSubmit}>
+                <input type="date" name="date" onChange={handleInputChange} required />
+                <input type="time" name="time" onChange={handleInputChange} required />
+                <input type="text" name="trainer" placeholder="Trainer" onChange={handleInputChange} required />
+                <button type="submit">Book</button>
+            </form>
+        </div>
+    );
+};
+
+const AdminDashboard = () => {
+    return(
+        <div className="container">
+            <h2>Admin Dashboard</h2>
+            <EquipmentList />
+            <AddRoom />
+            <AddEquipment />
+            <AddTrainer />
+            <button>Process Payments</button>
+        </div>
+    );
+}
+
+const EquipmentList = () => {
+    const [equipment, setEquipment] = useState([]);
+    useEffect(() => {
+        fetchEquipment().catch((error) => {
+            console.error('Error fetching equipment:', error);
+        });
+    }, []);
+
+    const fetchEquipment = async () => {
+        const response = await fetch('/sql/getequipment', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(response.statusText);
+        }
+
+        const data = await response.json();
+        console.log('Equipment Data: ', data);
+        setEquipment(data);
+    };
+
+    const toggleRepairStatus = async (assetTag) => {
+        // Find the equipment with the given asset tag
+        const equip = equipment.find(e => e.asset_tag === assetTag);
+
+        if (equip) {
+            // Toggle the repair status
+            equip.needs_repair = !equip.needs_repair;
+
+            const response = await fetch(`/sql/repair_equipment`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({
+                    asset_tag: equip.asset_tag,
+                    needs_repair: equip.needs_repair,
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Update the equipment state to trigger a re-render
+            setEquipment(equipment);
+        }
+    };
     return (
         <div>
             <h3>Equipment List</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Equipment ID</th>
+                        <th>Asset Tag</th>
                         <th>Equipment Name</th>
                         <th>Room Name</th>
                     </tr>
@@ -292,6 +467,11 @@ const EquipmentList = () => {
                             <td>{equip.asset_tag}</td>
                             <td>{equip.name}</td>
                             <td>{equip.room_name}</td>
+                            <td>
+                                <button onClick={() => toggleRepairStatus(equip.asset_tag)}>
+                                    {equip.needs_repair ? 'Mark as Repaired' : 'Mark as Needs Repair'}
+                                </button>
+                            </td>
                         </tr>
                     );
 })}
@@ -377,14 +557,14 @@ const AddEquipment = () => {
         };
         fetchRooms();
     },[]);
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const equipmentData = {
             name: e.target[0].value,
             roomid: e.target[1].value,
         };
-        console.log('Equipment Data: ',equipmentData);
-        fetch('/sql/add_equipment', {
+        //console.log('Equipment Data: ',equipmentData);
+        await fetch('/sql/add_equipment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -393,7 +573,6 @@ const AddEquipment = () => {
             body: JSON.stringify(equipmentData),
         }).then(response => {
             if (!response.ok) {
-                //
                 throw new Error(response.statusText);
             }
             return response.json();
@@ -409,8 +588,8 @@ const AddEquipment = () => {
             <form onSubmit={handleSubmit}>
                 <input type="text" placeholder="Equipment Name"></input>
                 <select>
-                    {rooms.map(room => (
-                        <option value={room.id}>{room.name}</option>
+                    {rooms.map((room) => (
+                        <option key={room.roomid} value={room.roomid}>{room.name}</option>
                     ))}
                 </select>
                 <button type="submit">Add Equipment</button>
@@ -482,7 +661,7 @@ const UserDashboard = () => {
                 <table>
                     <tbody>
                         <tr>
-                            <td>Username</td>
+                            <td>Username/Email</td>
                             <td><input ref={usernameRef} type="text" defaultValue={data.username} placeholder={data.username}/></td>
                         </tr>
                         <tr>
@@ -506,6 +685,7 @@ const UserDashboard = () => {
                 <button className="updateUserInfo" onClick={handleUpdate}>Update</button>
                 {/* Session Table */}
                 <UserSchedule />
+                <ScheduleBooking />
             </div>
         ) : (
             'Loading...'
@@ -543,7 +723,6 @@ const UserSchedule = () => {
                 <thead>
                     <tr>
                         <th>Start Time</th>
-                        <th>End Time</th>
                         <th>Trainer Name</th>
                         <th>Room Name</th>
                     </tr>
@@ -552,14 +731,9 @@ const UserSchedule = () => {
                 {sessions.map((session, index) => {
                     const startTime = new Date(session.start_time);
                     const formattedStartTime = startTime.toLocaleString();
-
-                    const endTime = new Date(session.end_time);
-                    const formattedEndTime = endTime.toLocaleString();
-
                     return (
                         <tr key={index}>
                             <td>{formattedStartTime}</td>
-                            <td>{formattedEndTime}</td>
                             <td>{session.trainer_name}</td>
                             <td>{session.room_name}</td>
                         </tr>

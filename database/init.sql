@@ -1,6 +1,6 @@
 -- ONLY USE THIS IF YOU ARE INITIALIZING OR HAVE MADE CHANGES TO THE DATABASE AS ALL THE DATA WILL BE DELETED!!!!!!!!!!!!
 -- READ THE WARNING
-DROP DATABASE IF EXISTS mogager;
+-- DROP DATABASE IF EXISTS mogager;
 
 CREATE DATABASE mogager;
 
@@ -66,7 +66,6 @@ CREATE TABLE sessions (
     trainerid INT,
     roomid INT,
     start_time TIMESTAMP,
-    end_time TIMESTAMP,
     FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (trainerid) REFERENCES trainers(trainerid),
     FOREIGN KEY (roomid) REFERENCES rooms(roomid)

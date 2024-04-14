@@ -4,7 +4,8 @@ const path = require('path');
 const { Pool } = require('pg');
 require('dotenv').config({ path: './config/.env' })
 const os = require('os');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { time } = require('console');
 
 const interfaces = os.networkInterfaces();
 
@@ -161,6 +162,20 @@ app.get('/sql/getequipment', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/sql/trainer_schedule', authenticateToken, async (req, res) => {
+    try {
+        const { trainerid } = req.user;
+        const schedule = await pool.query('SELECT * FROM schedule WHERE trainerid = $1', [trainerid]);
+        if (schedule.rows.length === 0) {
+            return res.status(404).json({ message: 'No schedule found' });
+        }
+        return res.status(200).json(schedule.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while getting the schedule' });
+    }
+});
+
 //POST METHODS
 
 
@@ -176,6 +191,17 @@ app.post('/sql/insert_user', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while inserting the user' });
+    }
+});
+
+app.post('/sql/insert_trainer', async (req, res) => {
+    try {
+        const { username, password, name} = req.body;
+        await pool.query('INSERT INTO trainers(username, password, name) VALUES($1, $2, $3)', [username, password, name]);
+        res.status(200).json({ message: 'Trainer inserted' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while inserting the trainer' });
     }
 });
 
@@ -221,6 +247,27 @@ app.post('/admin/login', async (req, res) => {
     }
 });
 
+//trainer login function
+app.post('/trainer/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        //check if supplied username and password are not empty
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+        const trainer = await pool.query('SELECT * FROM trainers WHERE username = $1 AND password = $2', [username, password]);
+        //check if there exists a user with the username and password specified
+        if(trainer.rows.length === 0){ return res.status(400).json({ error: 'Trainer does not exist' }); }
+        //create a token for the user
+        const token = jwt.sign({ trainerid: trainer.rows[0].trainerid }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // send the user id and the token back to the client
+        res.status(200).json({ trainerid: trainer.rows[0].trainerid , token });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'An error occurred while logging in on our side' });
+    }
+});
+
 //function for adding a new piece of equipment to the database
 app.post('/sql/add_equipment', authenticateToken, async (req, res) => {
     try {
@@ -246,6 +293,19 @@ app.post('/sql/add_room', authenticateToken, async (req, res) => {
     }
 });
 
+//function for adding a new session to the schedule
+app.post('/sql/add_session', authenticateToken, async (req, res) => {
+    try {
+        const { userid, trainer, timestamp } = req.body;
+        const trainerid = await pool.query('SELECT trainerid FROM trainers WHERE name = $1', [trainer]);
+        await pool.query('INSERT INTO sessions(userid, trainerid, start_time) VALUES($1, $2, $3)', [userid, trainerid.rows[0].trainerid, timestamp]);
+        res.status(200).json({ message: 'Session added' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while adding the session' });
+    }
+});
+
 //PUT METHODS
 //updates the height weight, and email of the user
 app.put('/sql/update_user', authenticateToken, async (req, res) => {
@@ -268,6 +328,18 @@ app.put('/sql/update_user', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while updating the user' });
+    }
+});
+
+//updates the repair status of a piece of equipment
+app.put('/sql/repair_equipment', authenticateToken, async (req, res) => {
+    try {
+        const { asset_tag, needs_repair } = req.body;
+        await pool.query('UPDATE equipment SET needs_repair = $1 WHERE asset_tag = $2', [needs_repair, asset_tag]);
+        res.status(200).json({ message: 'Equipment updated' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while updating the equipment' });
     }
 });
 
