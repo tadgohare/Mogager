@@ -9,3 +9,6 @@ This is a fitness management tool used for fitness clubs to cater to the many di
 3. Run `npm run init` (IS DIFFERENT FROM `npm init`), to run a script I created to initialize the environment variables, create the tables and to populate the database with some sample data. NOTE****** THIS SCRIPT ONLY WORKS ON LINUX SO YOU SHOULD JUST MODIFY `config/sample.env` AND RENAME TO `.env` WITH YOUR VALUES.
 4. Use the command `npm run build` to compile the React application into a `main.js` entry point.
 5. Run `npm start` to start the server on your local network.
+
+## Link To Demonstration Video
+[Here](https://youtu.be/F4jI9vzYLYM) is the link to the demonstration video of my program which goes over a lot of the design choices and a quick walkthrough on how the program works.
